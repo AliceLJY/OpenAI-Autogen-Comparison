@@ -1,218 +1,234 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="scroll-smooth">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenAI Agents Python 与 Microsoft AutoGen 对比分析</title>
-    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 字体 -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- 图标库 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                        },
-                        secondary: {
-                            50: '#f5f3ff',
-                            100: '#ede9fe',
-                            200: '#ddd6fe',
-                            300: '#c4b5fd',
-                            400: '#a78bfa',
-                            500: '#8b5cf6',
-                            600: '#7c3aed',
-                            700: '#6d28d9',
-                            800: '#5b21b6',
-                            900: '#4c1d95',
-                        },
-                    },
-                },
-            },
-        };
-    </script>
-    <style>
-        /* 自定义滚动条 */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        
-        .dark ::-webkit-scrollbar-thumb {
-            background: #475569;
-        }
-        
-        /* 淡入动画 */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-        
-        /* 代码块样式 */
-        pre {
-            position: relative;
-            overflow-x: auto;
-        }
-        
-        .copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        pre:hover .copy-btn {
-            opacity: 1;
-        }
-        
-        /* 自定义标签页样式 */
-        .tab-content > div {
-            display: none;
-        }
-        
-        .tab-content > div.active {
-            display: block;
-        }
-    </style>
 </head>
-<body class="antialiased bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
-    <!-- 顶部导航栏 -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/90 dark:bg-gray-900/90 border-b border-gray-200 dark:border-gray-800 shadow-sm transition-colors duration-300">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-600 dark:text-primary-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z" clip-rule="evenodd" />
-                        <path fill-rule="evenodd" d="M10 4a1 1 0 100 2 1 1 0 000-2zm-2 5a1 1 0 112 0v4a1 1 0 11-2 0v-4z" clip-rule="evenodd" />
-                    </svg>
-                    <span class="font-semibold text-xl">AI 代理框架对比</span>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="#overview" class="hidden sm:block hover:text-primary-600 dark:hover:text-primary-400 px-2 py-1 rounded-md text-sm font-medium">概览</a>
-                    <a href="#features" class="hidden sm:block hover:text-primary-600 dark:hover:text-primary-400 px-2 py-1 rounded-md text-sm font-medium">特性</a>
-                    <a href="#code" class="hidden sm:block hover:text-primary-600 dark:hover:text-primary-400 px-2 py-1 rounded-md text-sm font-medium">代码示例</a>
-                    <a href="#applications" class="hidden sm:block hover:text-primary-600 dark:hover:text-primary-400 px-2 py-1 rounded-md text-sm font-medium">应用场景</a>
-                    <a href="#conclusion" class="hidden sm:block hover:text-primary-600 dark:hover:text-primary-400 px-2 py-1 rounded-md text-sm font-medium">结论</a>
-                    <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                        <svg id="dark-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
-                        </svg>
-                        <svg id="light-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block dark:hidden" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                        </svg>
-                    </button>
-                    <button id="mobile-menu-button" class="sm:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <!-- 移动端导航菜单 -->
-            <div id="mobile-menu" class="sm:hidden hidden pb-4">
-                <div class="flex flex-col space-y-2">
-                    <a href="#overview" class="hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors">概览</a>
-                    <a href="#features" class="hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors">特性</a>
-                    <a href="#code" class="hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors">代码示例</a>
-                    <a href="#applications" class="hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors">应用场景</a>
-                    <a href="#conclusion" class="hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors">结论</a>
-                </div>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <header class="sticky top-0 z-50 bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold">AI 代理框架对比</h1>
+                <nav class="hidden md:block">
+                    <ul class="flex space-x-6">
+                        <li><a href="#overview" class="hover:text-blue-600">概览</a></li>
+                        <li><a href="#features" class="hover:text-blue-600">特性</a></li>
+                        <li><a href="#code" class="hover:text-blue-600">代码示例</a></li>
+                        <li><a href="#conclusion" class="hover:text-blue-600">结论</a></li>
+                    </ul>
+                </nav>
             </div>
         </div>
     </header>
 
-    <!-- 主要内容 -->
-    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- 标题部分 -->
-        <section class="text-center mb-12 fade-in">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">OpenAI Agents Python <span class="text-primary-600 dark:text-primary-400">VS</span> Microsoft AutoGen</h1>
-            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">两大顶尖 AI 代理框架的全面对比分析</p>
+    <main class="container mx-auto px-4 py-8">
+        <section class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4">OpenAI Agents Python VS Microsoft AutoGen</h1>
+            <p class="text-lg text-gray-600">两大顶尖 AI 代理框架的全面对比分析</p>
         </section>
 
-        <!-- 概览部分 -->
-        <section id="overview" class="mb-16 fade-in" style="animation-delay: 0.1s">
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
-                <div class="px-6 py-8">
-                    <h2 class="text-2xl font-bold mb-6 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        基本信息对比
-                    </h2>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full border-collapse">
-                            <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-700">
-                                    <th class="px-4 py-3 text-left text-sm font-semibold">特性</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold">OpenAI Agents Python</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold">Microsoft AutoGen</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                                    <td class="px-4 py-3 text-sm">开发组织</td>
-                                    <td class="px-4 py-3 text-sm">OpenAI</td>
-                                    <td class="px-4 py-3 text-sm">Microsoft</td>
-                                </tr>
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                                    <td class="px-4 py-3 text-sm">创建时间</td>
-                                    <td class="px-4 py-3 text-sm">2025年3月11日（非常新的项目）</td>
-                                    <td class="px-4 py-3 text-sm">2023年8月18日（发展较久）</td>
-                                </tr>
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                                    <td class="px-4 py-3 text-sm">当前版本</td>
-                                    <td class="px-4 py-3 text-sm">刚刚发布</td>
-                                    <td class="px-4 py-3 text-sm">v0.4（当前稳定版）</td>
-                                </tr>
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                                    <td class="px-4 py-3 text-sm">主要定位</td>
-                                    <td class="px-4 py-3 text-sm">轻量级且强大的多Agent工作流框架</td>
-                                    <td class="px-4 py-3 text-sm">创建自主或协作型多Agent AI应用的框架</td>
-                                </tr>
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                                    <td class="px-4 py-3 text-sm">代码语言支持</td>
-                                    <td class="px-4 py-3 text-sm">Python</td>
-                                    <td class="px-4 py-3 text-sm">Python, .NET</td>
-                                </tr>
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                                    <td class="px-4 py-3 text-sm">Python要求</td>
-                                    <td class="px-4 py-3 text-sm">未明确指定</td>
-                                    <td class="px-4 py-3 text-sm">Python 3.10+</td>
-                                </tr>
-                            </tbody>
-                        </table>
+        <section id="overview" class="mb-12">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">基本信息对比</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-3 text-left">特性</th>
+                                <th class="p-3 text-left">OpenAI Agents Python</th>
+                                <th class="p-3 text-left">Microsoft AutoGen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b">
+                                <td class="p-3">开发组织</td>
+                                <td class="p-3">OpenAI</td>
+                                <td class="p-3">Microsoft</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="p-3">创建时间</td>
+                                <td class="p-3">2025年3月11日（新项目）</td>
+                                <td class="p-3">2023年8月18日（发展较久）</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="p-3">主要定位</td>
+                                <td class="p-3">轻量级且强大的多Agent工作流框架</td>
+                                <td class="p-3">创建自主或协作型多Agent AI应用的框架</td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="p-3">代码语言支持</td>
+                                <td class="p-3">Python</td>
+                                <td class="p-3">Python, .NET</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <section id="features" class="mb-12">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">核心特性对比</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-blue-700">OpenAI Agents Python</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>轻量级且易于使用</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>清晰的Agent循环和执行模型</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>强大的护栏和安全功能</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>全面的追踪系统</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>与多种模型提供商兼容</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-3 text-purple-700">Microsoft AutoGen</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>成熟的生态系统和社区支持</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>全面的工具链（包括无代码GUI）</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>跨语言支持（Python和.NET）</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>分层架构提供灵活性和扩展性</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-500 mr-2">✓</span>
+                                <span>内置多模态和高级交互功能</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </section>
+
+        <section id="code" class="mb-12">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">代码示例对比</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3 text-blue-700">OpenAI Agents Python - Hello World</h3>
+                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
+from agents import Agent, Runner
+
+agent = Agent(name="Assistant", instructions="You are a helpful assistant")
+
+result = Runner.run_sync(agent, "Write a haiku about recursion in programming.")
+print(result.final_output)
+
+# Code within the code,
+# Functions calling themselves,
+# Infinite loop's dance.</pre>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3 text-purple-700">Microsoft AutoGen - Hello World</h3>
+                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
+import asyncio
+from autogen_agentchat.agents import AssistantAgent
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+async def main() -> None:
+    model_client = OpenAIChatCompletionClient(model="gpt-4o")
+    agent = AssistantAgent("assistant", model_client=model_client)
+    print(await agent.run(task="Say 'Hello World!'"))
+    await model_client.close()
+
+asyncio.run(main())</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="mb-12">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-6">结论</h2>
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg mb-6">
+                    <p class="text-lg mb-4">OpenAI Agents Python和Microsoft AutoGen都是用于创建多Agent AI应用的优秀框架，但它们有不同的设计理念和目标受众。</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="bg-white/50 p-4 rounded-lg">
+                            <h3 class="font-medium text-blue-700 mb-2">OpenAI Agents Python</h3>
+                            <p>一个新兴的轻量级框架，专注于简单性和实用性，适合快速开发需要精细控制的简单多Agent系统。</p>
+                        </div>
+                        
+                        <div class="bg-white/50 p-4 rounded-lg">
+                            <h3 class="font-medium text-purple-700 mb-2">Microsoft AutoGen</h3>
+                            <p>一个更加成熟和全面的生态系统，提供从底层核心API到高级开发工具的完整解决方案。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-5 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-3">选择建议</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">•</span>
+                            <span>对于<strong class="text-blue-600">简单的多Agent工作流</strong>，OpenAI Agents Python可能提供更直接的解决方案</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-purple-600 mr-2">•</span>
+                            <span>对于<strong class="text-purple-600">需要更全面功能和生态系统支持的复杂项目</strong>，Microsoft AutoGen可能是更好的选择</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-gray-100 py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold">AI 代理框架对比分析</h3>
+                    <p class="text-gray-600">© 2025 AI 研究与开发</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 70,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
